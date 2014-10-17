@@ -17,3 +17,8 @@ build:
         name: build this package
         code: |
           python setup.py install
+
+    - script:
+        name: run tests
+        code: |
+          nosetests -svx
