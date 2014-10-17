@@ -7,17 +7,13 @@ build:
         python_location: /usr/bin/python3.4
         install_wheel: true # (experimental)
 
-    # A step that executes `pip install` command.
     - pip-install
 
     # # This pip-install clears the local wheel cache
     # - pip-install:
     #     clean_wheel_dir: true
 
-    # A custom script step, name value is used in the UI
-    # and the code value contains the command that get executed
     - script:
-        name: echo python information
+        name: build this package
         code: |
-          echo "python version $(python --version) running"
-          echo "pip version $(pip --version) running"
+          python setup.py install
