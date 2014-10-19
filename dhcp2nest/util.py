@@ -16,8 +16,14 @@ def follow_file(fn, max_lines=100):
     """
     fq = Queue(maxsize=max_lines)
 
-    # Declare the helper routine
     def _follow_file_thread(fn, fq):
+        """
+        Queue lines from the given file (fn) continuously, even as the file
+        grows or is replaced
+
+        WARNING: This generator will block forever on the tail subprocess--no
+        timeouts are enforced.
+        """
         # Use system tail with name-based following and retry
         p = Popen(["tail", "-n0", "-F", fn], stdout=PIPE)
 
