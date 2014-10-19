@@ -38,4 +38,4 @@ def test_basic_follow():
         q = follow_file(tmp_fn)
         sleep(0.125)
         out_file.write('test line\n')
-    eq_(q.get(timeout=5), 'test line\n')
+    eq_(q.get(timeout=2), 'test line\n')
