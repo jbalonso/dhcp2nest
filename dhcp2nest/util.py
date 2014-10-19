@@ -19,7 +19,7 @@ def follow_file(fn, max_lines=100):
     # Declare the helper routine
     def _follow_file_thread(fn, fq):
         # Use system tail with name-based following and retry
-        p = Popen(["tail", "-F", fn], stdout=PIPE)
+        p = Popen(["tail", "-n0", "-F", fn], stdout=PIPE)
 
         # Loop forever on pulling data from tail
         line = True
