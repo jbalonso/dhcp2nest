@@ -34,7 +34,7 @@ def follow_file(fn, max_lines=100):
             fq.put(line)
 
     # Spawn a thread to read data from tail
-    Thread(target=_follow_file_thread, args=(fn, fq)).start()
+    Thread(target=_follow_file_thread, args=(fn, fq), daemon=True).start()
 
     # Return the queue
     return fq
