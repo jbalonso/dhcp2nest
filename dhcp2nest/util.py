@@ -24,7 +24,7 @@ def follow_file(fn, max_lines=100):
         # Loop forever on pulling data from tail
         line = True
         while line:
-            line = p.stdout.readline()
+            line = p.stdout.readline().decode('utf-8')
             fq.put(line)
 
     # Spawn a thread to read data from tail
