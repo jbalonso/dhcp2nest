@@ -5,6 +5,7 @@ import asyncio
 from queue import Queue
 from subprocess import Popen, PIPE
 from threading import Thread
+from functools import wraps
 
 
 def run_until_complete(coro, timeout=None, loop=None):
@@ -27,6 +28,19 @@ def run_until_complete(coro, timeout=None, loop=None):
             return result
 
     return loop.run_until_complete(waiter())
+
+
+def async_test(timeout=None, loop=None):
+    """
+    Return a decorator that wraps a coroutine such that it can be used as a test
+    """
+    def decorator(test):
+        @wraps(test)
+        def wrapper(*args, **kwargs):
+            return run_until_complete(test(*args, **kwargs), timeout=timeout,
+                    loop=loop)
+        return wrapper
+    return decorator
 
 
 def follow_file(fn, max_lines=100):

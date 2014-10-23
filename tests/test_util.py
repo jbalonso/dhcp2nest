@@ -8,7 +8,7 @@ from time import sleep
 import asyncio
 
 
-from dhcp2nest.util import run_until_complete, follow_file
+from dhcp2nest.util import run_until_complete, async_test, follow_file
 
 
 TEMPDIR = None
@@ -25,6 +25,19 @@ def test_run_until_complete_basic():
 @raises(asyncio.TimeoutError)
 def test_run_until_complete_timeout():
    run_until_complete(asyncio.sleep(2), timeout=0.5)
+
+
+@async_test(timeout=2)
+def test_async_test_basic():
+    result = yield from asyncio.sleep(0.5, 'done')
+    eq_(result, 'done')
+
+
+@raises(asyncio.TimeoutError)
+@async_test(timeout=0.5)
+def test_async_test_basic():
+    result = yield from asyncio.sleep(2.0, 'done')
+    eq_(result, 'done')
 
 
 # #################
