@@ -1,16 +1,35 @@
 """
 Tests for dhcp2nest.util
 """
-from nose.tools import with_setup, eq_
+from nose.tools import with_setup, eq_, raises
 from tempfile import TemporaryDirectory
 import os.path
 from time import sleep
+import asyncio
 
 
-from dhcp2nest.util import follow_file
+from dhcp2nest.util import run_until_complete, follow_file
 
 
 TEMPDIR = None
+
+# ########################
+# run_until_complete tests
+# ########################
+
+
+def test_run_until_complete_basic():
+    eq_(run_until_complete(asyncio.sleep(0.5, 'done'), timeout=2), 'done')
+
+
+@raises(asyncio.TimeoutError)
+def test_run_until_complete_timeout():
+   run_until_complete(asyncio.sleep(2), timeout=0.5)
+
+
+# #################
+# follow_file tests
+# #################
 
 
 def follow_setup():
@@ -28,9 +47,6 @@ def follow_teardown():
     TEMPDIR.cleanup()
 
 
-# #################
-# follow_file tests
-# #################
 @with_setup(follow_setup, follow_teardown)
 def test_basic_follow():
     tmp_fn = os.path.join(TEMPDIR.name, 'basic.log')

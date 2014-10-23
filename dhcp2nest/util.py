@@ -1,9 +1,32 @@
 """
 Utility functions for dhcp2nest
 """
+import asyncio
 from queue import Queue
 from subprocess import Popen, PIPE
 from threading import Thread
+
+
+def run_until_complete(coro, timeout=None, loop=None):
+    """
+    Run an asyncio loop for a particular coroutine, returning its value or
+    raising a timeout if the futures do not complete before the timeout has
+    elapsed.
+    """
+    # Get the current loop if necessary
+    loop = loop or asyncio.get_event_loop()
+
+    @asyncio.coroutine
+    def waiter():
+        """
+        Construct a coroutine that waits for the futures in coros and returns a
+        list
+        """
+        for future in asyncio.as_completed([coro], loop=loop, timeout=timeout):
+            result = yield from future
+            return result
+
+    return loop.run_until_complete(waiter())
 
 
 def follow_file(fn, max_lines=100):
