@@ -1,8 +1,7 @@
 """
 Utility functions for dhcp2nest
 """
-import asyncio
-from queue import Queue
+import asyncio.subprocess
 from subprocess import Popen, PIPE
 from threading import Thread
 from functools import wraps
@@ -43,17 +42,18 @@ def async_test(timeout=None, loop=None):
     return decorator
 
 
-def follow_file(fn, max_lines=100):
+def follow_file(fn, max_lines=100, loop=None):
     """
     Return a Queue that is fed lines (up to max_lines) from the given file (fn)
-    continuously
+    continuously, starting with the last line in the file
 
     The implementation given here was inspired by
     http://stackoverflow.com/questions/12523044/how-can-i-tail-a-log-file-in-python
     """
-    fq = Queue(maxsize=max_lines)
+    fq = asyncio.Queue(maxsize=max_lines, loop=loop)
 
-    def _follow_file_thread(fn, fq):
+    @asyncio.coroutine
+    def _follow_file_task(fn, fq):
         """
         Queue lines from the given file (fn) continuously, even as the file
         grows or is replaced
@@ -62,16 +62,19 @@ def follow_file(fn, max_lines=100):
         timeouts are enforced.
         """
         # Use system tail with name-based following and retry
-        p = Popen(["tail", "-n0", "-F", fn], stdout=PIPE)
+        create = asyncio.create_subprocess_exec("tail", "-n1", "-F", fn,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL)
+        proc = yield from create
 
         # Loop forever on pulling data from tail
         line = True
         while line:
-            line = p.stdout.readline().decode('utf-8')
-            fq.put(line)
+            line = yield from proc.stdout.readline()
+            yield from fq.put(line.decode('utf-8'))
 
     # Spawn a thread to read data from tail
-    Thread(target=_follow_file_thread, args=(fn, fq), daemon=True).start()
+    asyncio.async(_follow_file_task(fn, fq), loop=loop)
 
     # Return the queue
     return fq

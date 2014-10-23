@@ -5,6 +5,7 @@ from nose.tools import with_setup, eq_, raises
 from tempfile import TemporaryDirectory
 import os.path
 from time import sleep
+from os import rename
 import asyncio
 
 
@@ -61,10 +62,62 @@ def follow_teardown():
 
 
 @with_setup(follow_setup, follow_teardown)
+@async_test(timeout=1)
 def test_basic_follow():
     tmp_fn = os.path.join(TEMPDIR.name, 'basic.log')
     with open(tmp_fn, 'w') as out_file:
-        q = follow_file(tmp_fn)
-        sleep(0.125)
         out_file.write('test line\n')
-    eq_(q.get(timeout=2), 'test line\n')
+    q = follow_file(tmp_fn)
+    eq_((yield from q.get()), 'test line\n')
+
+
+@with_setup(follow_setup, follow_teardown)
+@async_test(timeout=1)
+def test_live_follow():
+    tmp_fn = os.path.join(TEMPDIR.name, 'basic.log')
+    q = follow_file(tmp_fn)
+    with open(tmp_fn, 'w') as out_file:
+        out_file.write('test line\n')
+        out_file.flush()
+        eq_((yield from q.get()), 'test line\n')
+        out_file.write('another line\n')
+        out_file.flush()
+        eq_((yield from q.get()), 'another line\n')
+
+
+@with_setup(follow_setup, follow_teardown)
+@async_test(timeout=1)
+def test_replacement_follow():
+    tmp_fn = os.path.join(TEMPDIR.name, 'basic.log')
+    q = follow_file(tmp_fn)
+
+    with open(tmp_fn, 'w') as out_file:
+        out_file.write('test line\n')
+        out_file.flush()
+        eq_((yield from q.get()), 'test line\n')
+
+    with open(tmp_fn, 'w') as out_file:
+        out_file.write('another line\n')
+        out_file.flush()
+        eq_((yield from q.get()), 'another line\n')
+
+
+@with_setup(follow_setup, follow_teardown)
+@async_test(timeout=2)
+def test_rename_follow():
+    tmp_fn = os.path.join(TEMPDIR.name, 'basic.log')
+    new_fn = os.path.join(TEMPDIR.name, 'basic.log.aside')
+    q = follow_file(tmp_fn)
+
+    with open(tmp_fn, 'w') as out_file:
+        out_file.write('test line\n')
+        out_file.flush()
+        eq_((yield from q.get()), 'test line\n')
+        rename(tmp_fn, new_fn)
+        out_file.write('lost line\n')
+        out_file.flush()
+
+    with open(tmp_fn, 'w') as out_file:
+        out_file.write('another line\n')
+        out_file.flush()
+        eq_((yield from q.get()), 'another line\n')
