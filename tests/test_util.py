@@ -36,7 +36,7 @@ def test_async_test_basic():
 
 @raises(asyncio.TimeoutError)
 @async_test(timeout=0.5)
-def test_async_test_basic():
+def test_async_test_basic_timeout():
     result = yield from asyncio.sleep(2.0, 'done')
     eq_(result, 'done')
 
